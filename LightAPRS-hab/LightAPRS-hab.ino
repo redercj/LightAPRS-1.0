@@ -63,7 +63,7 @@ bool alternateSymbolTable = false ; //false = '/' , true = '\'
 
 char Frequency[9]="144.3900"; //default frequency. 144.3900 for US, 144.8000 for Europe
 
-char comment[50] = "First Testing of Light APRS"; // Max 50 char
+char comment[50]; // Max 50 char
 char StatusMessage[50] = "Status Msg: "; 
 //*****************************************************************************
 // variables for smart_packet 
@@ -113,7 +113,6 @@ float DraHighVolt=8.0;    // min Volts for radio module (DRA818V) to transmit (T
 int secsTillTx = BeaconWait; // Countdown
 float last_tx_millis = 0;
 
-int secsToCheckBatt = BattWait; // Also Countdown
 boolean aliveStatus = true; //for tx status message on first wake-up just once.
 
 //do not change WIDE path settings below if you don't know what you are doing :) 
@@ -242,7 +241,7 @@ void loop() {
             sendStatus();       
           } else {
             sendLocation();
-          }
+          } 
 
           freeMem();
           Serial.flush();
@@ -251,18 +250,19 @@ void loop() {
 #if defined(DEVMODE)
       Serial.println(F("Not enough satelites"));
 #endif
+      if((gps.time.minute() % 5) == 0) {               
+        sendStatus();       
       }
     }
-
+  } else {    
     secsTillTx -= round((millis()-loop_start)/1000);
+  }
+  
   } else {
-    secsToCheckBatt--;
-
-    secsToCheckBatt -= (millis()-loop_start)/1000;
-    // sleepSeconds(BattWait-((millis-loop_start)/1000));
+      secsTillTx = BattWait;
+      secsTillTx -= round((millis()-loop_start)/1000);
   }
   sleepSeconds(secsTillTx);
-  secsTillTx = 0;
 }
 
 
