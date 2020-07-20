@@ -86,16 +86,30 @@ struct txZones {
 };
 
 #define NUM_ZONES 8
+
 struct txZones zones[NUM_ZONES] = {
-  {60, 20000, true},
-  {60, 50000, true},
-  {30, 80000, true},
-  {15, 1000000, true},
-  {30, 80000, false},
-  {60, 50000, false},
-  {30, 20000, false},
-  {15,  0, false},
-};
+   {60, 20000, true},
+   {60, 50000, true},
+   {30, 80000, true},
+   {15, 1000000, true},
+   {30, 80000, false},
+   {60, 50000, false},
+   {30, 20000, false},
+   {15,  0, false},
+ };
+
+// struct txZones zones[NUM_ZONES] = { // uncoment for dev 
+//     {1, 20000, true},
+//     {1, 50000, true},
+//     {1, 80000, true},
+//     {1, 1000000, true},
+//     {1, 80000, false},
+//     {1, 50000, false},
+//     {1, 20000, false},
+//     {1,  0, false},
+//   };
+
+
 
 // end variables for smart_packet
 
@@ -186,6 +200,7 @@ void loop() {
   wdt_reset();
 
   if (readBatt() > BattMin) {
+
     if(aliveStatus) {
       //send status tx on startup once (before gps fix)
       #if defined(DEVMODE)
@@ -202,6 +217,7 @@ void loop() {
     }
 
     if(secsTillTx <= 0) {
+
       last_tx_millis = millis();
       secsTillTx = GPSWait;
 
@@ -210,10 +226,9 @@ void loop() {
 
       if ((gps.location.age() < 1000 || gps.location.isUpdated()) && 
           gps.location.isValid()) {
-        
+  
         if (gps.satellites.isValid() && 
            gps.satellites.value() > 3) {
-
           doAltCheck();
           updateZone(); //updates BeaconWait
           updateComment();
@@ -242,13 +257,12 @@ void loop() {
           } else {
             sendLocation();
           } 
-
           freeMem();
           Serial.flush();
         } // if time to tx
       } else {
 #if defined(DEVMODE)
-      Serial.println(F("Not enough satelites"));
+      Serial.println(F("Not enough satellites"));
 #endif
       if((gps.time.minute() % 5) == 0) {               
         sendStatus();       
@@ -263,6 +277,7 @@ void loop() {
       secsTillTx -= round((millis()-loop_start)/1000);
   }
   sleepSeconds(secsTillTx);
+  secsTillTx = 0;
 }
 
 
@@ -310,51 +325,24 @@ void updateZone() {
 }
 
 void updateComment() {
-  comment[0] = ' ';
-  comment[1] = 'U';
-  comment[2] = '/';
-  comment[3] = 'D';
-  comment[4] = ':';
-  comment[5] = ' ';
+  char going;
   if (gps.altitude.feet() > lastalt) {
-    comment[6] = '^';
+    going = '^';
   } else if (gps.altitude.feet() < lastalt) {
-    comment[6] = 'v';
+    going = 'v';
   } else {
-    comment[6] = '-';
+    going = '-';
   }
   lastalt = gps.altitude.feet();
-  comment[7] = ' ';
-  comment[8] = 'X';
-  comment[9] = 'H';
-  comment[10] = 'U';
-  comment[11] = ':';
-  comment[12] = ' ';
-
-  sprintf(comment + 13, String(i2c_tracker.readHumidity()).c_str());
-
-  comment[17] = '%';
-  comment[18] = ' ';
-  comment[19] = 'X';
-  comment[20] = 'T';
-  comment[21] = 'E';
-  comment[22] = 'M';
-  comment[23] = 'P';
-  comment[24] = ':';
-  comment[25] = ' ';
-  
-
-  sprintf(comment + 26, "%7s", String(i2c_tracker.readTemperature()).c_str());
-
-  comment[33] = 'C';
-  if (balloonPopped) {
-    comment[34] = ' ';
-    comment[35] = 'M';
-    comment[36] = 'X';
-    comment[37] = ' ';
-    sprintf(comment + 38, "%03d", (double) max_altitude);
+  if (!(balloonPopped)) {
+    sprintf(comment, " U/D: %c XHU: %4s%% XTEMP: %7sC", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str());
+    
+  } else {
+    sprintf(comment, " U/D: %c XHU: %4s%% XTEMP: %7sC MX %d", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str(), max_altitude);
   }
+  
 #if defined(DEVMODE)
+  
   Serial.println(comment);
 #endif
 }
