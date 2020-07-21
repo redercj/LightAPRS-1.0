@@ -87,27 +87,27 @@ struct txZones {
 
 #define NUM_ZONES 8
 
-struct txZones zones[NUM_ZONES] = {
-   {60, 20000, true},
-   {60, 50000, true},
-   {30, 80000, true},
-   {15, 1000000, true},
-   {30, 80000, false},
-   {60, 50000, false},
-   {30, 20000, false},
-   {15,  0, false},
- };
-
-// struct txZones zones[NUM_ZONES] = { // uncoment for dev 
-//     {1, 20000, true},
-//     {1, 50000, true},
-//     {1, 80000, true},
-//     {1, 1000000, true},
-//     {1, 80000, false},
-//     {1, 50000, false},
-//     {1, 20000, false},
-//     {1,  0, false},
-//   };
+//struct txZones zones[NUM_ZONES] = {
+//   {60, 20000, true},
+//   {60, 50000, true},
+//   {30, 80000, true},
+//   {15, 1000000, true},
+//   {30, 80000, false},
+//   {60, 50000, false},
+//   {30, 20000, false},
+//   {15,  0, false},
+// };
+//
+struct txZones zones[NUM_ZONES] = { // uncoment for dev 
+    {1, 20000, true},
+    {1, 50000, true},
+    {1, 80000, true},
+    {1, 1000000, true},
+    {1, 80000, false},
+    {1, 50000, false},
+    {1, 20000, false},
+    {1,  0, false},
+  };
 
 
 
@@ -335,10 +335,10 @@ void updateComment() {
   }
   lastalt = gps.altitude.feet();
   if (!(balloonPopped)) {
-    sprintf(comment, " U/D: %c XHU: %4s%% XTEMP: %7sC", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str());
+    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str());
     
   } else {
-    sprintf(comment, " U/D: %c XHU: %4s%% XTEMP: %7sC MX %d", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str(), max_altitude);
+    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC MX %d", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str(), max_altitude);
   }
   
 #if defined(DEVMODE)
