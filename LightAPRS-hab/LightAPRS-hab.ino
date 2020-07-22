@@ -29,7 +29,7 @@
 #define AprsPinInput  pinMode(12,INPUT);pinMode(13,INPUT);pinMode(14,INPUT);pinMode(15,INPUT)
 #define AprsPinOutput pinMode(12,OUTPUT);pinMode(13,OUTPUT);pinMode(14,OUTPUT);pinMode(15,OUTPUT)
 
- #define DEVMODE // Development mode. Uncomment to enable for debugging.
+// #define DEVMODE // Development mode. Uncomment to enable for debugging.
 
 
 // begin prototypes
@@ -63,7 +63,7 @@ bool alternateSymbolTable = false ; //false = '/' , true = '\'
 
 char Frequency[9]="144.3900"; //default frequency. 144.3900 for US, 144.8000 for Europe
 
-char comment[50] = "First Testing of Light APRS"; // Max 50 char
+char comment[50]; // Max 50 char
 char StatusMessage[50] = "Status Msg: "; 
 //*****************************************************************************
 // variables for smart_packet 
@@ -87,6 +87,7 @@ struct txZones {
 };
 
 #define NUM_ZONES 8
+
 struct txZones zones[NUM_ZONES] = {
   {60, 60, 20000, true},
   {60, 30, 50000, true},
@@ -117,7 +118,6 @@ int secsTillTx = BeaconWait; // Countdown
 int secsTillPing = GPSPingWait;
 float last_tx_millis = 0;
 
-int secsToCheckBatt = BattWait; // Also Countdown
 boolean aliveStatus = true; //for tx status message on first wake-up just once.
 
 //do not change WIDE path settings below if you don't know what you are doing :) 
@@ -189,14 +189,9 @@ void loop() {
   float loop_start = millis();
   int sleepSecs;
   loopNumber++;
-
-  #if defined(DEVMODE)
-    Serial.println("LoopNumber -> ");
-    Serial.println(loopNumber);
-  #endif
-
   wdt_reset();
   if (readBatt() > BattMin) {
+
     if(aliveStatus) {
       //send status tx on startup once (before gps fix)
       #if defined(DEVMODE)
@@ -213,9 +208,6 @@ void loop() {
     }
 
     if(secsTillPing <= 0) {
-      #if defined(DEVMODE)
-        Serial.println(F("Pinging GPS for altitude"));
-      #endif
       current_altitude = gps.altitude.feet();
       if(current_altitude > max_altitude) {
         max_altitude = current_altitude;
@@ -224,6 +216,7 @@ void loop() {
     }
 
     if(secsTillTx <= 0) {
+
       last_tx_millis = millis();
       secsTillTx = GPSWait;
 
@@ -232,10 +225,9 @@ void loop() {
 
       if ((gps.location.age() < 1000 || gps.location.isUpdated()) && 
           gps.location.isValid()) {
-        
+  
         if (gps.satellites.isValid() && 
            gps.satellites.value() > 3) {
-
           doAltCheck();
           updateZone(); //updates BeaconWait
           updateComment();
@@ -259,28 +251,27 @@ void loop() {
             sendStatus();       
           } else {
             sendLocation();
-          }
-
+          } 
           freeMem();
           Serial.flush();
         } // if time to tx
       } else {
 #if defined(DEVMODE)
-      Serial.println(F("Not enough satelites"));
+      Serial.println(F("Not enough satellites"));
 #endif
+      if((gps.time.minute() % 15) == 0) {               
+        sendStatus();       
       }
     }
-
+  } else {    
     secsTillTx -= round((millis()-loop_start)/1000);
     secsTillPing -= round((millis()-loop_start)/1000);
     #if defined(DEVMODE)
       Serial.println(round((millis()-loop_start)/1000));
     #endif
   } else {
-    secsToCheckBatt--;
-
-    secsToCheckBatt -= (millis()-loop_start)/1000;
-    // sleepSeconds(BattWait-((millis-loop_start)/1000));
+      secsTillTx = BattWait;
+      secsTillTx -= round((millis()-loop_start)/1000);
   }
   // Serial.println("Loop time in milliseconds->");
   // Serial.println(round((millis()-loop_start)/1000));
@@ -343,51 +334,24 @@ void updateZone() {
 }
 
 void updateComment() {
-  comment[0] = ' ';
-  comment[1] = 'U';
-  comment[2] = '/';
-  comment[3] = 'D';
-  comment[4] = ':';
-  comment[5] = ' ';
+  char going;
   if (gps.altitude.feet() > lastalt) {
-    comment[6] = '^';
+    going = '^';
   } else if (gps.altitude.feet() < lastalt) {
-    comment[6] = 'v';
+    going = 'v';
   } else {
-    comment[6] = '-';
+    going = '-';
   }
   lastalt = gps.altitude.feet();
-  comment[7] = ' ';
-  comment[8] = 'X';
-  comment[9] = 'H';
-  comment[10] = 'U';
-  comment[11] = ':';
-  comment[12] = ' ';
-
-  sprintf(comment + 13, String(i2c_tracker.readHumidity()).c_str());
-
-  comment[17] = '%';
-  comment[18] = ' ';
-  comment[19] = 'X';
-  comment[20] = 'T';
-  comment[21] = 'E';
-  comment[22] = 'M';
-  comment[23] = 'P';
-  comment[24] = ':';
-  comment[25] = ' ';
-  
-
-  sprintf(comment + 26, "%7s", String(i2c_tracker.readTemperature()).c_str());
-
-  comment[33] = 'C';
-  if (balloonPopped) {
-    comment[34] = ' ';
-    comment[35] = 'M';
-    comment[36] = 'X';
-    comment[37] = ' ';
-    sprintf(comment + 38, "%03d", (double) max_altitude);
+  if (!(balloonPopped)) {
+    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str());
+    
+  } else {
+    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC MX: %d", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str(), max_altitude);
   }
+  
 #if defined(DEVMODE)
+  
   Serial.println(comment);
 #endif
 }
