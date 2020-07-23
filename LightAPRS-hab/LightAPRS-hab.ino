@@ -29,7 +29,7 @@
 #define AprsPinInput  pinMode(12,INPUT);pinMode(13,INPUT);pinMode(14,INPUT);pinMode(15,INPUT)
 #define AprsPinOutput pinMode(12,OUTPUT);pinMode(13,OUTPUT);pinMode(14,OUTPUT);pinMode(15,OUTPUT)
 
-#define DEVMODE // Development mode. Uncomment to enable for debugging.
+// #define DEVMODE // Development mode. Uncomment to enable for debugging.
 
 
 // begin prototypes
