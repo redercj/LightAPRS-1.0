@@ -210,7 +210,6 @@ void loop() {
 
     if(secsTillPing <= 0) {
       current_altitude = gps.altitude.feet();
-      Serial.println("Pinging");
       if(current_altitude > max_altitude) {
         max_altitude = current_altitude;
       }
