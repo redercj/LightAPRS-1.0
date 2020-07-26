@@ -74,6 +74,7 @@ long current_altitude = 0;
 unsigned long max_altitude = (unsigned long) 0;
 
 
+
 long lastalt = 0; // last updated altitude
 bool balloonPopped = false; // DO NOT CHANGE
 int balloonDescendRepeat = 0; // AGAIN, DO NOT CHANGE
@@ -340,20 +341,12 @@ void updateZone() {
 }
 
 void updateComment() {
-  char going;
-  if (gps.altitude.feet() > lastalt) {
-    going = '^';
-  } else if (gps.altitude.feet() < lastalt) {
-    going = 'v';
-  } else {
-    going = '-';
-  }
   lastalt = gps.altitude.feet();
   if (!(balloonPopped)) {
-    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str());
+    sprintf(comment, " XHU+XTEMP: %04s%% %07sC", String((float) i2c_tracker.readHumidity()).c_str(), String((float) i2c_tracker.readTemperature()).c_str());
     
   } else {
-    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC MX: %d", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str(), max_altitude);
+    sprintf(comment, " XHU+XTEMP: %04s%% %07sC MX: %d", String((float) i2c_tracker.readHumidity()).c_str(), String((float) i2c_tracker.readTemperature()).c_str(), max_altitude);
   }
   
 #if defined(DEVMODE)
