@@ -74,6 +74,7 @@ long current_altitude = 0;
 unsigned long max_altitude = (unsigned long) 0;
 
 
+
 long lastalt = 0; // last updated altitude
 bool balloonPopped = false; // DO NOT CHANGE
 int balloonDescendRepeat = 0; // AGAIN, DO NOT CHANGE
@@ -353,7 +354,7 @@ void updateComment() {
     sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str());
     
   } else {
-    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC MX: %d", going, String(i2c_tracker.readHumidity()).c_str(), String(i2c_tracker.readTemperature()).c_str(), max_altitude);
+    sprintf(comment, " U/D: %c XHU: %04s%% XTEMP: %07sC MX: %d", going, String(i2c_tracker.readHumidity()).c_str(), String((unsigned long) i2c_tracker.readTemperature()).c_str(), max_altitude);
   }
   
 #if defined(DEVMODE)
