@@ -11,7 +11,7 @@
 #define GpsVccPin   18
 #define RfPwrHLPin  21
 #define RfPttPin    20
-#define BattPin     A2
+#define BattPin     A2 
 #define PIN_DRA_RX  22
 #define PIN_DRA_TX  23
 
@@ -24,7 +24,7 @@
 #define RfOFF         digitalWrite(RfPDPin, LOW)
 #define RfPwrHigh     pinMode(RfPwrHLPin, INPUT)
 #define RfPwrLow      pinMode(RfPwrHLPin, OUTPUT);digitalWrite(RfPwrHLPin, LOW)
-#define RfPttON       digitalWrite(RfPttPin, HIGH)//NPN
+#define RfPttON       digitalWrite(RfPttPin, HIGH)//NPN 
 #define RfPttOFF      digitalWrite(RfPttPin, LOW)
 #define AprsPinInput  pinMode(12,INPUT);pinMode(13,INPUT);pinMode(14,INPUT);pinMode(15,INPUT)
 #define AprsPinOutput pinMode(12,OUTPUT);pinMode(13,OUTPUT);pinMode(14,OUTPUT);pinMode(15,OUTPUT)
@@ -69,7 +69,6 @@ char StatusMessage[50] = "Status Msg: ";
 //*****************************************************************************
 // variables for smart_packet 
 Adafruit_Si7021 i2c_tracker = Adafruit_Si7021();
-
 long current_altitude = 0;
 unsigned long max_altitude = (unsigned long) 0;
 
@@ -81,7 +80,9 @@ int balloonDescendRepeat = 0; // AGAIN, DO NOT CHANGE
 
 const int numDescendChecks = 5;
 int currentSect = 0;
-
+float externalTempAvg = i2c_tracker.readTemperature();
+float externalHumidityAvg = i2c_tracker.readHumidity();
+unsigned long externalTelemetrySamples = 1;
 struct txZones {
   long secsForTx;
   long secsForGPS;
@@ -90,7 +91,6 @@ struct txZones {
 };
 
 #define NUM_ZONES 8
-
 struct txZones zones[NUM_ZONES] = {
   {60, 60, 20000, true},
   {60, 30, 50000, true},
@@ -194,7 +194,13 @@ void loop() {
   loopNumber++;
   wdt_reset();
   if (readBatt() > BattMin) {
+    externalTelemetrySamples ++;
+    externalTempAvg += i2c_tracker.readTemperature();
+    externalTempAvg /= externalTelemetrySamples;
+    externalHumidityAvg += i2c_tracker.readHumidity();
+    externalHumidityAvg /= externalTelemetrySamples;
 
+    
     if(aliveStatus) {
       //send status tx on startup once (before gps fix)
       #if defined(DEVMODE)
@@ -371,6 +377,7 @@ void sleepSeconds(int sec) {
   sleptSecs += sec * 1000;
   for (int i = 0; i < sec; i++) {
     //if(readBatt() < GpsMinVolt) GpsOFF;  //(for pico balloon only)
+
     LowPower.powerDown(SLEEP_1S, ADC_OFF, BOD_ON);   
   }
    wdt_enable(WDTO_8S);
@@ -554,7 +561,7 @@ void sendStatus() {
   delay(2000);
   RfPttON;
   delay(1000);
-  sprintf(StatusMessage, "loopNmb %03ul txCnt %03d satCnt %02d alt %06ul", loopNumber, TxCount, (int)gps.satellites.value(), (long)gps.altitude.feet());
+  sprintf(StatusMessage, "loopNmb %03ul txCnt %03d satCnt %02d alt %06ul XTEMPAVG %09fC XHUAVG %05f%%", loopNumber, TxCount, (int)gps.satellites.value(), (long)gps.altitude.feet());
 
   APRS_sendStatus(StatusMessage, strlen(StatusMessage));
 
